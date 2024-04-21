@@ -51,11 +51,17 @@ class AlienInvasion:
         # Clock to control the game's frame rate
         self.clock = pygame.time.Clock()
 
-        # Used to set the game as inactive to wait for the player to press a continue button
+        # Used to set the game as inactive on the first startup to wait for the player to press start
+        self.first_startup = True
+
+        # Used to set the game as inactive to wait for the player to press a button to continue or end
         self.game_active = False
 
         # Play button
         self.play_button = Button(self, "Play")
+
+        # Continue button
+        self.continue_button = Button(self, "Continue")
 
     def run_game(self):
         """Start the main loop for the game."""
@@ -64,7 +70,7 @@ class AlienInvasion:
         while True:
             self._check_events()   # check for input (keyboard, mouse)
 
-            if self.game_active:
+            if self.game_active and not self.first_startup:
                 self.ship.update()  # get ship's position
                 self._update_bullets()  # get each bullet position
                 self._update_aliens()   # get each alien position
@@ -115,7 +121,7 @@ class AlienInvasion:
         elif event.key == pygame.K_SPACE:
             self._fire_bullet()
 
-        # Adds a keyboard shortcut to start the game 'Enter'
+        # Adds a keyboard shortcut to start the game 'p'
         elif event.key == pygame.K_p and not self.game_active:
             self._start_game()
 
@@ -128,9 +134,13 @@ class AlienInvasion:
             self.ship.moving_left = False
 
     def _check_play_button(self, mouse_pos):
-        """Starts a new game when the player clicks the play button."""
-        button_clicked = self.play_button.rect.collidepoint(mouse_pos)
-        if button_clicked and not self.game_active:
+        """Starts a new game when the player clicks the play or continue button."""
+        play_clicked = self.play_button.rect.collidepoint(mouse_pos)
+        if play_clicked and self.first_startup:
+            self._start_game()
+
+        continue_clicked = self.continue_button.rect.collidepoint(mouse_pos)
+        if continue_clicked and not self.game_active:
             self._start_game()
 
     def _start_game(self):
@@ -141,6 +151,7 @@ class AlienInvasion:
         self.sb.prep_score()
         self.sb.prep_level()
         self.sb.prep_ships()
+        self.first_startup = False
         self.game_active = True
 
         # Clear the screen of any remaining aliens and bullets
@@ -291,11 +302,22 @@ class AlienInvasion:
         self.sb.show_score()
 
         # Draw the play button if the game is inactive
-        if not self.game_active:
+        # if not self.game_active:
+        if self.first_startup:
             self.play_button.draw_button()
+
+        if not self.game_active and not self.first_startup:
+            self.continue_button.draw_button()
 
         # Show the most recent drawn screen
         pygame.display.flip()
+
+
+if __name__ == '__main__':
+    # Make the game instance and run the game
+    ai = AlienInvasion()
+    ai.run_game()
+
 
 
 if __name__ == '__main__':
