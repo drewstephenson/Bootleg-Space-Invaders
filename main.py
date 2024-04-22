@@ -98,9 +98,6 @@ class AlienInvasion:
             self.screen.fill(self.settings.background_color)  # background color
             self.ship.blitme()  # ship image
 
-            # Show the most recent drawn screen
-            pygame.display.flip()
-
     def _check_events(self):
         """Responds to key presses and mouse clicks."""
         for event in pygame.event.get():
