@@ -39,12 +39,16 @@ class Settings:
         self.bullet_speed = 7.5
 
         # Alien settings
-        self.alien_speed = 1.0
+        self.alien_speed = 1.5
         self.fleet_direction = 1   # 1 means going right, -1 means going left
         self.alien_points = 50
+
+        # Star settings
+        self.star_speed = 1.0
 
     def increase_speed(self):
         """Apply increases to speed."""
         self.ship_speed *= self.speedup_scale
         self.alien_speed *= self.speedup_scale
+        self.star_speed *= self.speedup_scale
         self.alien_points = int(self.alien_points * self.score_scale)

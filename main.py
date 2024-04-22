@@ -9,6 +9,7 @@ from alien import Alien
 from button import Button
 from scoreboard import Scoreboard
 from messager import Message
+from star import Star
 
 
 class AlienInvasion:
@@ -73,6 +74,10 @@ class AlienInvasion:
         # Ship hit message
         self.ship_message = Message(self, "ow")
 
+        # Group to store stars
+        self.stars = pygame.sprite.Group()
+        self._create_stars()
+
     def run_game(self):
         """Start the main loop for the game."""
 
@@ -84,6 +89,7 @@ class AlienInvasion:
                 self.ship.update()  # get ship's position
                 self._update_bullets()  # get each bullet position
                 self._update_aliens()   # get each alien position
+                self._update_stars()
 
             self._update_screen()  # show changes on screen
             self.clock.tick(60)  # 60 frames per second
@@ -310,13 +316,34 @@ class AlienInvasion:
             alien.rect.y += self.settings.fleet_drop_speed   # drops aliens the same distance as fleet drop speed
         self.settings.fleet_direction *= -1   # alternates between moving left and right after hitting edge
 
+    def _create_stars(self):
+        """Create a group of stars."""
+        for _ in range(100):
+            star = Star(self)
+            self.stars.add(star)
+
+    def _update_stars(self):
+        """Update position of current bullets and delete old bullets."""
+        # Update star positions
+        self.stars.update()
+
+        # Delete stars that have gone off-screen, create new one at top of screen
+        for star in self.stars.copy():
+            if star.rect.bottom >= self.settings.screen_height:
+                self.stars.remove(star)
+                new_star = Star(self, 0)
+                # new_star.rect.y = 0   # set y-coordinate to top of screen
+                self.stars.add(new_star)
+
     def _update_screen(self):
         """Update images on the screen, flip to the new screen."""
         
         # Redraw screen for each loop
         self.screen.fill(self.settings.background_color)  # background color
-        for bullet in self.bullets.sprites():   # each bullet
+        for bullet in self.bullets.sprites():   # draw each bullet
             bullet.draw_bullet()
+        for star in self.stars.sprites():  # draw each star
+            star.draw_star()
         self.ship.blitme()   # ship image
         self.aliens.draw(self.screen)   # draw() is the group equivalent of blit()
         self.sb.show_score()
@@ -330,6 +357,7 @@ class AlienInvasion:
             self.continue_button.draw_button()
             self.game_over.draw_game_msg()
 
+        # Draw the ship hit message
         if self.ship_down:
             self.ship_message.draw_ship_msg()
 

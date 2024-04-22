@@ -1,5 +1,6 @@
 import pygame
 from pygame.sprite import Sprite
+import random
 
 
 class Alien(Sprite):
@@ -11,12 +12,14 @@ class Alien(Sprite):
         self.screen = game.screen
         self.settings = game.settings
 
-        # Load the alien's image
-        self.image = pygame.image.load('si_images/red_bug.png')
+        # List of possible alien images
+        self.alien_images = ['si_images/red_bug.png', 'si_images/blue_bug.png', 'si_images/galaga_boss.png']
+
+        # Load random alien image
+        self.image = pygame.image.load(random.choice(self.alien_images))
+
         # Resize the image
-        alien_width = game.settings.screen_width // 25
-        alien_height = game.settings.screen_height // 15
-        self.image = pygame.transform.scale(self.image, (alien_width, alien_height))   # apply changes
+        self.image = pygame.transform.scale(self.image, (30, 30))   # apply changes
 
         # Get the resized alien's rect
         self.rect = self.image.get_rect()
