@@ -8,6 +8,7 @@ from bullet import Bullet
 from alien import Alien
 from button import Button
 from scoreboard import Scoreboard
+from messager import Message
 
 
 class AlienInvasion:
@@ -57,11 +58,20 @@ class AlienInvasion:
         # Used to set the game as inactive to wait for the player to press a button to continue or end
         self.game_active = False
 
+        # Indicate ship has been hit
+        self.ship_down = False
+
         # Play button
         self.play_button = Button(self, "Play")
 
         # Continue button
         self.continue_button = Button(self, "Continue")
+
+        # Game over message
+        self.game_over = Message(self, "Game Over")
+
+        # Ship hit message
+        self.ship_message = Message(self, "ow")
 
     def run_game(self):
         """Start the main loop for the game."""
@@ -104,6 +114,10 @@ class AlienInvasion:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
                 self._check_play_button(mouse_pos)
+
+            # If the ship is hit, display message for a moment
+            elif event.type == pygame.USEREVENT:
+                self.ship_down = False
 
     def _check_keydown_events(self, event):
         """Responds to a key being pressed down."""
@@ -259,16 +273,22 @@ class AlienInvasion:
             self.aliens.empty()
             self.bullets.empty()
 
+            # Display message
+            self.ship_down = True
+            self.ship_message.prep_ship_msg("ow")
+            pygame.time.set_timer(pygame.USEREVENT, 1500)  # 1 second
+
             # Recenter the ship, create a new fleet
             self._create_fleet()
             self.ship.center_ship()
 
-            # Pause the game to allow the player to recover
-            sleep(1.0)  # 1.0 second pause
+            # Pause the game for a moment
+            sleep(1.0)
 
         else:
             self.game_active = False
             pygame.mouse.set_visible(True)   # enable mouse again after game over
+            self.game_over.prep_game_msg("Game Over")
 
     def _check_aliens_bottom(self):
         """Checks if any aliens have reached the bottom of the screen, treating it like losing a ship."""
@@ -302,22 +322,19 @@ class AlienInvasion:
         self.sb.show_score()
 
         # Draw the play button if the game is inactive
-        # if not self.game_active:
         if self.first_startup:
             self.play_button.draw_button()
 
+        # Draw the continue button instead of the play button after losing, display "Game Over"
         if not self.game_active and not self.first_startup:
             self.continue_button.draw_button()
+            self.game_over.draw_game_msg()
+
+        if self.ship_down:
+            self.ship_message.draw_ship_msg()
 
         # Show the most recent drawn screen
         pygame.display.flip()
-
-
-if __name__ == '__main__':
-    # Make the game instance and run the game
-    ai = AlienInvasion()
-    ai.run_game()
-
 
 
 if __name__ == '__main__':
