@@ -1,6 +1,7 @@
 import sys
 from time import sleep
 import pygame
+import random
 from settings import Settings
 from game_stats import GameStats
 from ship import Ship
@@ -10,6 +11,7 @@ from button import Button
 from scoreboard import Scoreboard
 from messager import Message
 from star import Star
+from powerup import Powerup
 
 
 class AlienInvasion:
@@ -25,11 +27,13 @@ class AlienInvasion:
 
         # For a windowed screen
         self.screen = pygame.display.set_mode((self.settings.screen_width, self.settings.screen_height))
+        self.full_screen = False
 
         # For a full screen
         # self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         # self.settings.screen_width = self.screen.get_rect().width
         # self.settings.screen_height = self.screen.get_rect().height
+        # self.full_screen = True
 
         # Title
         pygame.display.set_caption("Bootleg Space Invaders")
@@ -78,6 +82,15 @@ class AlienInvasion:
         self.stars = pygame.sprite.Group()
         self._create_stars()
 
+        # Group to store powerups
+        self.powerups = pygame.sprite.Group()
+
+        # Triple shot powerup
+        self.triple_shot_active = False
+
+        # Piercing bullet powerup
+        self.pierce_active = False
+
     def run_game(self):
         """Start the main loop for the game."""
 
@@ -89,7 +102,8 @@ class AlienInvasion:
                 self.ship.update()  # get ship's position
                 self._update_bullets()  # get each bullet position
                 self._update_aliens()   # get each alien position
-                self._update_stars()
+                self._update_powerups()  # get each powerup position
+                self._update_stars()  # get each star position
 
             self._update_screen()  # show changes on screen
             self.clock.tick(60)  # 60 frames per second
@@ -121,6 +135,12 @@ class AlienInvasion:
             # If the ship is hit, display message for a moment
             elif event.type == pygame.USEREVENT:
                 self.ship_down = False
+
+            elif event.type == pygame.USEREVENT + 1:
+                self.pierce_active = False   # Pierce timer ends
+
+            elif event.type == pygame.USEREVENT + 2:
+                self.triple_shot_active = False  # Triple shot timer ends
 
     def _check_keydown_events(self, event):
         """Responds to a key being pressed down."""
@@ -171,9 +191,10 @@ class AlienInvasion:
         self.first_startup = False
         self.game_active = True
 
-        # Clear the screen of any remaining aliens and bullets
+        # Clear the screen of any remaining aliens, bullets, and powerups
         self.aliens.empty()
         self.bullets.empty()
+        self.powerups.empty()
 
         # Create new fleet and center the ship
         self._create_fleet()
@@ -184,9 +205,30 @@ class AlienInvasion:
 
     def _fire_bullet(self):
         """Creates a limited amount of bullets on the screen and adds them to a group."""
-        if len(self.bullets) < self.settings.bullets_allowed:
-            new_bullet = Bullet(self)
-            self.bullets.add(new_bullet)   # add() is the group equivalent of append()
+        if self.triple_shot_active:
+            # Allow 2 bursts of 3 bullets
+            self.settings.bullets_allowed = 6
+
+            if len(self.bullets) < self.settings.bullets_allowed:
+                # Create 3 bullets in a row
+                new_bullet1 = Bullet(self)
+                new_bullet2 = Bullet(self)
+                new_bullet3 = Bullet(self)
+
+                # Set the position of the 2 additional bullets
+                new_bullet2.rect.x += 30
+                new_bullet3.rect.x -= 30
+
+                # Add bullets to the group
+                self.bullets.add(new_bullet1, new_bullet2, new_bullet3)
+
+        else:
+            # Allow 2 bullets on screen at a time
+            self.settings.bullets_allowed = 2
+
+            if len(self.bullets) < self.settings.bullets_allowed:
+                new_bullet = Bullet(self)
+                self.bullets.add(new_bullet)   # add() is the group equivalent of append()
 
     def _update_bullets(self):
         """Update position of current bullets and delete old bullets."""
@@ -202,11 +244,17 @@ class AlienInvasion:
 
     def _check_bullet_alien_collisions(self):
         """Checks for any alien-bullet collisions, deleting both if detected."""
-        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+        if self.pierce_active:
+            collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, False, True)
+
+        else:
+            collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
 
         if collisions:
-            for alien in collisions.values():
-                self.stats.score += self.settings.alien_points * len(alien)
+            for alien_hit in collisions.values():
+                self.stats.score += self.settings.alien_points * len(alien_hit)
+                for alien in alien_hit:
+                    self._create_powerup(alien)
             self.sb.prep_score()
             self.sb.check_high_score()
 
@@ -223,6 +271,32 @@ class AlienInvasion:
         # Potential power up: piercing bullet
         # collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, False)
 
+    def _create_powerup(self, alien):
+        """Shooting an alien has a chance to drop a powerup."""
+        # 1 percent chance of dropping a powerup
+        if random.randint(1, 100) == 1:
+            powerup = Powerup(self, alien)
+            self.powerups.add(powerup)
+
+    def _update_powerups(self):
+        """Update the position of each powerup on the screen."""
+        self.powerups.update()
+
+        # Delete any powerups that have gone off-screen
+        for powerup in self.powerups.copy():
+            if powerup.rect.bottom >= self.settings.screen_height:
+                self.powerups.remove(powerup)
+
+        # Check if the powerup has collided with the ship
+        self._check_powerup_ship_collisions()
+
+    def _check_powerup_ship_collisions(self):
+        """Checks if a powerup has collided with the ship."""
+        power_collision = pygame.sprite.spritecollideany(self.ship, self.powerups)
+        if power_collision:
+            power_collision.apply_power()
+            self.powerups.remove(power_collision)
+
     def _create_alien(self, x_position, y_position):
         """Creates an alien and places it in a row."""
         new_alien = Alien(self)
@@ -235,12 +309,17 @@ class AlienInvasion:
         """Create a fleet of aliens."""
         # Creates aliens in a row until there is no more space
         # Each alien is 2 alien widths apart, aliens on end of row are 1.5 alien widths from the edge
-        # Vertical spacing is 2 alien heights, stops 6 alien heights from the bottom of the screen
+        # Vertical spacing is 2 alien heights, stops after making 5 rows of aliens
+        # If you are using full screen, the aliens will start lower
         alien = Alien(self)
         alien_width, alien_height = alien.rect.size   # rect.size is a tuple (width, height)
 
         current_x, current_y = alien_width, alien_height
-        while current_y < (self.settings.screen_height - 6 * alien_height):
+        if self.full_screen:
+            current_y += 7.0 * alien_height
+
+        row = 0
+        while row < 5:
             while current_x < (self.settings.screen_width - 4.5 * alien_width):  # 4.5 alien width spacing from the edge
                 self._create_alien(current_x, current_y)
                 current_x += 2.0 * alien_width  # 2 alien width spacing between aliens
@@ -248,6 +327,7 @@ class AlienInvasion:
             # Row finished, reset x and increment y value.
             current_x = alien_width
             current_y += 2.0 * alien_height
+            row += 1
 
     def _update_aliens(self):
         """Update the position of each alien in the fleet."""
@@ -272,14 +352,15 @@ class AlienInvasion:
             self.stats.ships_left -= 1
             self.sb.prep_ships()
 
-            # Clear any aliens and bullets on the screen
+            # Clear any aliens, bullets, and powerups on the screen
             self.aliens.empty()
             self.bullets.empty()
+            self.powerups.empty()
 
             # Display message
             self.ship_down = True
             self.ship_message.prep_ship_msg("ow")
-            pygame.time.set_timer(pygame.USEREVENT, 1500)  # 1 second
+            pygame.time.set_timer(pygame.USEREVENT, 1500)  # 1.5 seconds
 
             # Recenter the ship, create a new fleet
             self._create_fleet()
@@ -329,7 +410,6 @@ class AlienInvasion:
             if star.rect.bottom >= self.settings.screen_height:
                 self.stars.remove(star)
                 new_star = Star(self, 0)
-                # new_star.rect.y = 0   # set y-coordinate to top of screen
                 self.stars.add(new_star)
 
     def _update_screen(self):
@@ -339,6 +419,8 @@ class AlienInvasion:
         self.screen.fill(self.settings.background_color)  # background color
         for bullet in self.bullets.sprites():   # draw each bullet
             bullet.draw_bullet()
+        for powerup in self.powerups.sprites():  # draw each powerup
+            powerup.draw_powerup()
         for star in self.stars.sprites():  # draw each star
             star.draw_star()
         self.ship.blitme()   # ship image

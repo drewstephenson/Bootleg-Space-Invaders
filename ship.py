@@ -22,7 +22,7 @@ class Ship(Sprite):
         # Resize the image
         ship_width = game.settings.screen_width // 25
         ship_height = game.settings.screen_height // 15
-        self.image = pygame.transform.scale(self.image, (ship_width, ship_height))
+        self.image = pygame.transform.scale(self.image, (40, 40))
 
         # Get the resized ship's rect
         self.rect = self.image.get_rect()

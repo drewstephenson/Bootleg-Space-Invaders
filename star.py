@@ -11,7 +11,7 @@ class Star(Sprite):
         self.settings = game.settings
 
         # Set the star's width and height, place it randomly on the screen
-        self.rect = pygame.Rect(0, 0, 2, 2)  # 2x2 pixel stars
+        self.rect = pygame.Rect(0, 0, self.settings.star_width, self.settings.star_height)  # 2x2 pixel stars
         self.rect.x = random.randint(0, game.settings.screen_width)
 
         # If y value is passed, use that value. Otherwise, place star with random y value.
