@@ -13,7 +13,7 @@ class Settings:
         self.ship_limit = 3  # number of lives
 
         # Bullet settings
-        self.bullet_width = 3
+        self.bullet_width = 3000
         self.bullet_height = 25
         self.bullet_color = (255, 255, 0)  # yellow
         self.bullets_allowed = 2   # bullet limit to prevent spamming

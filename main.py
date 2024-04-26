@@ -91,6 +91,9 @@ class AlienInvasion:
         # Piercing bullet powerup
         self.pierce_active = False
 
+        # Powerup messages
+        self.message = None
+
     def run_game(self):
         """Start the main loop for the game."""
 
@@ -141,6 +144,9 @@ class AlienInvasion:
 
             elif event.type == pygame.USEREVENT + 2:
                 self.triple_shot_active = False  # Triple shot timer ends
+
+            elif event.type == pygame.USEREVENT + 3:
+                self.message = None  # Powerup message timer ends
 
     def _check_keydown_events(self, event):
         """Responds to a key being pressed down."""
@@ -426,6 +432,10 @@ class AlienInvasion:
         self.ship.blitme()   # ship image
         self.aliens.draw(self.screen)   # draw() is the group equivalent of blit()
         self.sb.show_score()
+
+        # Draw powerup messages
+        if self.message:
+            self.message.draw_game_msg()
 
         # Draw the play button if the game is inactive
         if self.first_startup:

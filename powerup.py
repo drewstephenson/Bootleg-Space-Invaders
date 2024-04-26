@@ -1,6 +1,7 @@
 import pygame
 from pygame.sprite import Sprite
 import random
+from messager import Message
 
 
 class Powerup(Sprite):
@@ -40,14 +41,20 @@ class Powerup(Sprite):
             # Increase life, update scoreboard picture
             self.game.stats.ships_left += 1
             self.game.sb.prep_ships()
+            self.game.message = Message(self.game, "Extra life!!")
+            self.game.message.draw_game_msg()
 
         if self.power == "pierce":
             self.game.pierce_active = True
             pygame.time.set_timer(pygame.USEREVENT + 1, self.game.settings.powerup_duration)
+            self.game.message = Message(self.game, "Piercing shot!!")
+            self.game.message.draw_game_msg()
 
         if self.power == "triple_shot":
             self.game.triple_shot_active = True
             pygame.time.set_timer(pygame.USEREVENT + 2, self.game.settings.powerup_duration)
+            self.game.message = Message(self.game, "Triple shot!!")
+            self.game.message.draw_game_msg()
 
         if self.power == "nuke":
             for _ in self.game.aliens.sprites():
@@ -56,8 +63,12 @@ class Powerup(Sprite):
                 self.game.sb.check_high_score()
 
             self.game.aliens.empty()
+            self.game.message = Message(self.game, "Boom!!")
+            self.game.message.draw_game_msg()
 
-        print(f"Powerup applied: {self.power}")
+        # Set a timer for each powerup message
+        pygame.time.set_timer(pygame.USEREVENT + 3, 2000)
+
 
 
 
