@@ -42,6 +42,7 @@ class Scoreboard:
 
     def prep_high_score(self):
         """Turn the high score into an image."""
+        self.stats.high_score = round(self.stats.high_score, -1)
         high_score = round(self.stats.high_score, -1)
         high_score_str = f"Highest: {high_score:,}"
         self.high_score_image = self.font.render(high_score_str, True, self.text_color,
@@ -56,6 +57,7 @@ class Scoreboard:
         """If the current score is higher than the high score, update the high score."""
         if self.stats.score > self.stats.high_score:
             self.stats.high_score = self.stats.score
+            self.stats.save_high_score()
             self.prep_high_score()
 
     def show_score(self):

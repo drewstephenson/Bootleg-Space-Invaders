@@ -2,6 +2,7 @@ import pygame
 from pygame.sprite import Sprite
 import random
 from messager import Message
+from time import sleep
 
 
 class Powerup(Sprite):
@@ -65,6 +66,7 @@ class Powerup(Sprite):
             self.game.aliens.empty()
             self.game.message = Message(self.game, "Boom!!")
             self.game.message.draw_game_msg()
+            sleep(0.5)
 
         # Set a timer for each powerup message
         pygame.time.set_timer(pygame.USEREVENT + 3, 2000)
