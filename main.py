@@ -26,14 +26,14 @@ class AlienInvasion:
         self.clock = pygame.time.Clock()
 
         # For a windowed screen
-        self.screen = pygame.display.set_mode((self.settings.screen_width, self.settings.screen_height))
-        self.full_screen = False
+        # self.screen = pygame.display.set_mode((self.settings.screen_width, self.settings.screen_height))
+        # self.full_screen = False
 
         # For a full screen
-        # self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        # self.settings.screen_width = self.screen.get_rect().width
-        # self.settings.screen_height = self.screen.get_rect().height
-        # self.full_screen = True
+        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        self.settings.screen_width = self.screen.get_rect().width
+        self.settings.screen_height = self.screen.get_rect().height
+        self.full_screen = True
 
         # Title
         pygame.display.set_caption("Bootleg Space Invaders")
@@ -252,9 +252,11 @@ class AlienInvasion:
         """Checks for any alien-bullet collisions, deleting both if detected."""
         if self.pierce_active:
             collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, False, True)
+            self.settings.bullet_speed = 15.0   # Make bullets travel faster for piercing shot
 
         else:
             collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+            self.settings.bullet_speed = 7.5   
 
         if collisions:
             for alien_hit in collisions.values():
